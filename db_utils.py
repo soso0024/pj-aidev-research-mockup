@@ -126,7 +126,7 @@ def get_test_cases(code_id: int):
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT input, expected_output FROM test_cases WHERE code_id = %s", (code_id,)
+        "SELECT input, expected_output FROM test_cases WHERE code_id = ?", (code_id,)
     )
     test_cases = cursor.fetchall()
     conn.close()

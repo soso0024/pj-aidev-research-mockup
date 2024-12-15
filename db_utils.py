@@ -64,7 +64,7 @@ def insert_code_data(code: str, language: str, description: str):
     コードデータをデータベースに挿入します。
 
     この関数は、与えられたコード、言語、説明を'codes'テーブルに挿入します。
-    コードが既に存在する場合は、エラーメッセージを表示し、Noneを返します。
+    コードが既に存在する場合は、既存のコードのIDを返します。
     挿入が成功した場合は、新しいコードのIDを返します。
     エラーが発生した場合は、エラーメッセージを表示し、Noneを返します。
 
@@ -74,7 +74,7 @@ def insert_code_data(code: str, language: str, description: str):
         description: コードの説明。
 
     Returns:
-        挿入されたコードのID（成功した場合）、またはNone（失敗した場合）。
+        挿入されたコードのID（成功した場合）、既存のコードのID（重複の場合）、またはNone（エラーの場合）。
     """
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
@@ -83,9 +83,9 @@ def insert_code_data(code: str, language: str, description: str):
         cursor.execute("SELECT id FROM codes WHERE code = ?", (code,))
         existing_code = cursor.fetchone()
         if existing_code:
-            print("Error: Duplicate code entry.")
+            print(f"Code already exists with ID: {existing_code[0]}")
             conn.close()
-            return None
+            return existing_code[0]  # 既存のコードIDを返す
 
         # 新しいコードを挿入
         cursor.execute(
@@ -192,13 +192,29 @@ def get_code_embeddings():
     """
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
+    
+    # まず全てのコードデータを取得して確認
+    cursor.execute("SELECT id, code, embedding FROM codes")
+    all_codes = cursor.fetchall()
+    print("\nデータベース内の全コード:")
+    for code_id, code, embedding in all_codes:
+        print(f"ID: {code_id}, Code: {code[:30]}..., Embedding: {'あり' if embedding else 'なし'}")
+
+    # embeddingがnullでないデータのみ取得
     cursor.execute(
         "SELECT id, embedding FROM codes WHERE embedding IS NOT NULL"
-    )  # embeddingがnullでないデータのみ取得
+    )
     code_embeddings = []
     for code_id, embedding_json in cursor:
-        embedding = json.loads(embedding_json)
-        code_embeddings.append((code_id, embedding))
+        try:
+            embedding = json.loads(embedding_json)
+            code_embeddings.append((code_id, embedding))
+            print(f"Loaded embedding for code ID: {code_id}")
+        except json.JSONDecodeError as e:
+            print(f"Error decoding embedding for code ID {code_id}: {e}")
+            continue
+    
+    print(f"\n有効なembeddingの数: {len(code_embeddings)}")
     conn.close()
     return code_embeddings
 

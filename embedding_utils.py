@@ -4,9 +4,9 @@ import boto3
 import json
 
 bedrock_runtime = boto3.client(
-    service_name="bedrock-runtime",
-    region_name="ap-northeast-1" # Tokyo region
+    service_name="bedrock-runtime", region_name="ap-northeast-1"  # Tokyo region
 )
+
 
 def get_code_embedding(code: str):
     """コードの埋め込みベクトルを取得 (Bedrock APIを使用)"""

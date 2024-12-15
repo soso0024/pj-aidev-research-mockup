@@ -47,6 +47,22 @@ def main():
         if db_utils.update_code_embedding(code_id_2, embedding):
             print(f"Updated embedding for code ID: {code_id_2}")
 
+        # subtract関数用のテストケースを追加
+        if db_utils.insert_test_case(
+            code_id=code_id_2,
+            input_val="5, 3",
+            expected_output="2",
+            description="Test case 1",
+        ):
+            print("Inserted Test Case 1 for subtract function")
+        if db_utils.insert_test_case(
+            code_id=code_id_2,
+            input_val="10, 7",
+            expected_output="3",
+            description="Test case 2",
+        ):
+            print("Inserted Test Case 2 for subtract function")
+
     print("\n=== 類似コードの検索 ===")
     # AI生成コードの例
     ai_code = """def multiply(x, y):\n    return x * y"""
@@ -56,7 +72,7 @@ def main():
     # 類似コードの検索とテストケースの選択
     code_embeddings = db_utils.get_code_embeddings()
     print(f"\n取得したembedding数: {len(code_embeddings)}")
-    
+
     best_match_id = None
     max_similarity = -1
 
@@ -74,7 +90,7 @@ def main():
         if best_match_id:
             print(f"\n最も類似したコード ID: {best_match_id}")
             print(f"類似度: {max_similarity:.4f}")
-            
+
             test_cases = db_utils.get_test_cases(best_match_id)
             if test_cases:
                 print("\n選択されたテストケース:")

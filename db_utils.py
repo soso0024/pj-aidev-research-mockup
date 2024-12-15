@@ -192,18 +192,18 @@ def get_code_embeddings():
     """
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
-    
+
     # まず全てのコードデータを取得して確認
     cursor.execute("SELECT id, code, embedding FROM codes")
     all_codes = cursor.fetchall()
     print("\nデータベース内の全コード:")
     for code_id, code, embedding in all_codes:
-        print(f"ID: {code_id}, Code: {code[:30]}..., Embedding: {'あり' if embedding else 'なし'}")
+        print(
+            f"ID: {code_id}, Code: {code[:30]}..., Embedding: {'あり' if embedding else 'なし'}"
+        )
 
     # embeddingがnullでないデータのみ取得
-    cursor.execute(
-        "SELECT id, embedding FROM codes WHERE embedding IS NOT NULL"
-    )
+    cursor.execute("SELECT id, embedding FROM codes WHERE embedding IS NOT NULL")
     code_embeddings = []
     for code_id, embedding_json in cursor:
         try:
@@ -213,7 +213,7 @@ def get_code_embeddings():
         except json.JSONDecodeError as e:
             print(f"Error decoding embedding for code ID {code_id}: {e}")
             continue
-    
+
     print(f"\n有効なembeddingの数: {len(code_embeddings)}")
     conn.close()
     return code_embeddings

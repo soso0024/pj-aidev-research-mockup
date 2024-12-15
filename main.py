@@ -1,6 +1,5 @@
 import db_utils
 import embedding_utils
-import sqlite3
 
 
 def main():

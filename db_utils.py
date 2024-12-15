@@ -13,7 +13,7 @@ def create_database():
         """
         CREATE TABLE IF NOT EXISTS codes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            code TEXT NOT NULL,
+            code TEXT NOT NULL UNIQUE,
             language TEXT NOT NULL,
             embedding TEXT,
             description TEXT
@@ -43,13 +43,22 @@ def insert_code_data(code: str, language: str, description: str):
     conn = sqlite3.connect(DATABASE_NAME)
     cursor = conn.cursor()
     try:
+        # 既存のコードをチェック
+        cursor.execute("SELECT id FROM codes WHERE code = ?", (code,))
+        existing_code = cursor.fetchone()
+        if existing_code:
+            print("Error: Duplicate code entry.")
+            conn.close()
+            return None
+
+        # 新しいコードを挿入
         cursor.execute(
             """
             INSERT INTO codes (code, language, embedding, description)
             VALUES (?, ?, ?, ?)
         """,
             (code, language, None, description),
-        )  # 埋め込みは後で更新するためNone
+        )
         conn.commit()
         code_id = cursor.lastrowid
         conn.close()

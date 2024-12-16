@@ -2,66 +2,87 @@ import db_utils
 import embedding_utils
 
 
+def insert_code_with_tests(code_data):
+    """
+    コードとそれに関連するテストケースを挿入する関数
+
+    Args:
+        code_data: コードとテストケースの情報を含む辞書
+            {
+                'code': str,          # コードスニペット
+                'language': str,      # プログラミング言語
+                'description': str,   # コードの説明
+                'test_cases': list    # テストケースのリスト
+            }
+    """
+    code_id = db_utils.insert_code_data(
+        code=code_data['code'],
+        language=code_data['language'],
+        description=code_data['description'],
+    )
+    
+    if code_id:
+        print(f"Code ID: {code_id}")
+        embedding = embedding_utils.get_code_embedding(code_data['code'])
+        if db_utils.update_code_embedding(code_id, embedding):
+            print(f"Updated embedding for code ID: {code_id}")
+
+        for test_case in code_data['test_cases']:
+            if db_utils.insert_test_case(
+                code_id=code_id,
+                input_val=test_case['input'],
+                expected_output=test_case['expected_output'],
+                description=test_case['description'],
+            ):
+                print(f"Inserted {test_case['description']} for {code_data['description']}")
+
+
 def main():
     # データベース作成
     db_utils.create_database()
     print("Database created/connected.")
 
-    # コードデータの挿入（例）
-    code1 = """def add(a, b):\n    return a + b"""
-    code_id_1 = db_utils.insert_code_data(
-        code=code1,
-        language="Python",
-        description="Addition function",
-    )
-    if code_id_1:
-        print(f"Code ID: {code_id_1}")
-        embedding = embedding_utils.get_code_embedding(code1)
-        if db_utils.update_code_embedding(code_id_1, embedding):
-            print(f"Updated embedding for code ID: {code_id_1}")
+    # コードとテストケースのデータ定義
+    code_samples = [
+        {
+            'code': """def add(a, b):\n    return a + b""",
+            'language': "Python",
+            'description': "Addition function",
+            'test_cases': [
+                {
+                    'input': "1, 2",
+                    'expected_output': "3",
+                    'description': "Test case 1"
+                },
+                {
+                    'input': "5, -3",
+                    'expected_output': "2",
+                    'description': "Test case 2"
+                }
+            ]
+        },
+        {
+            'code': """def subtract(a, b):\n    return a - b""",
+            'language': "Python",
+            'description': "Subtraction function",
+            'test_cases': [
+                {
+                    'input': "5, 3",
+                    'expected_output': "2",
+                    'description': "Test case 1"
+                },
+                {
+                    'input': "10, 7",
+                    'expected_output': "3",
+                    'description': "Test case 2"
+                }
+            ]
+        }
+    ]
 
-        if db_utils.insert_test_case(
-            code_id=code_id_1,
-            input_val="1, 2",
-            expected_output="3",
-            description="Test case 1",
-        ):
-            print("Inserted Test Case 1 for add function")
-        if db_utils.insert_test_case(
-            code_id=code_id_1,
-            input_val="5, -3",
-            expected_output="2",
-            description="Test case 2",
-        ):
-            print("Inserted Test Case 2 for add function")
-
-    code2 = """def subtract(a, b):\n    return a - b"""
-    code_id_2 = db_utils.insert_code_data(
-        code=code2,
-        language="Python",
-        description="Subtraction function",
-    )
-    if code_id_2:
-        print(f"Code ID: {code_id_2}")
-        embedding = embedding_utils.get_code_embedding(code2)
-        if db_utils.update_code_embedding(code_id_2, embedding):
-            print(f"Updated embedding for code ID: {code_id_2}")
-
-        # subtract関数用のテストケースを追加
-        if db_utils.insert_test_case(
-            code_id=code_id_2,
-            input_val="5, 3",
-            expected_output="2",
-            description="Test case 1",
-        ):
-            print("Inserted Test Case 1 for subtract function")
-        if db_utils.insert_test_case(
-            code_id=code_id_2,
-            input_val="10, 7",
-            expected_output="3",
-            description="Test case 2",
-        ):
-            print("Inserted Test Case 2 for subtract function")
+    # 各コードサンプルを処理
+    for code_data in code_samples:
+        insert_code_with_tests(code_data)
 
     print("\n=== 類似コードの検索 ===")
     # AI生成コードの例

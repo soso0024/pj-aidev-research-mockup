@@ -16,25 +16,27 @@ def insert_code_with_tests(code_data):
             }
     """
     code_id = db_utils.insert_code_data(
-        code=code_data['code'],
-        language=code_data['language'],
-        description=code_data['description'],
+        code=code_data["code"],
+        language=code_data["language"],
+        description=code_data["description"],
     )
-    
+
     if code_id:
         print(f"Code ID: {code_id}")
-        embedding = embedding_utils.get_code_embedding(code_data['code'])
+        embedding = embedding_utils.get_code_embedding(code_data["code"])
         if db_utils.update_code_embedding(code_id, embedding):
             print(f"Updated embedding for code ID: {code_id}")
 
-        for test_case in code_data['test_cases']:
+        for test_case in code_data["test_cases"]:
             if db_utils.insert_test_case(
                 code_id=code_id,
-                input_val=test_case['input'],
-                expected_output=test_case['expected_output'],
-                description=test_case['description'],
+                input_val=test_case["input"],
+                expected_output=test_case["expected_output"],
+                description=test_case["description"],
             ):
-                print(f"Inserted {test_case['description']} for {code_data['description']}")
+                print(
+                    f"Inserted {test_case['description']} for {code_data['description']}"
+                )
 
 
 def main():
@@ -45,39 +47,31 @@ def main():
     # コードとテストケースのデータ定義
     code_samples = [
         {
-            'code': """def add(a, b):\n    return a + b""",
-            'language': "Python",
-            'description': "Addition function",
-            'test_cases': [
+            "code": """def add(a, b):\n    return a + b""",
+            "language": "Python",
+            "description": "Addition function",
+            "test_cases": [
+                {"input": "1, 2", "expected_output": "3", "description": "Test case 1"},
                 {
-                    'input': "1, 2",
-                    'expected_output': "3",
-                    'description': "Test case 1"
+                    "input": "5, -3",
+                    "expected_output": "2",
+                    "description": "Test case 2",
                 },
-                {
-                    'input': "5, -3",
-                    'expected_output': "2",
-                    'description': "Test case 2"
-                }
-            ]
+            ],
         },
         {
-            'code': """def subtract(a, b):\n    return a - b""",
-            'language': "Python",
-            'description': "Subtraction function",
-            'test_cases': [
+            "code": """def subtract(a, b):\n    return a - b""",
+            "language": "Python",
+            "description": "Subtraction function",
+            "test_cases": [
+                {"input": "5, 3", "expected_output": "2", "description": "Test case 1"},
                 {
-                    'input': "5, 3",
-                    'expected_output': "2",
-                    'description': "Test case 1"
+                    "input": "10, 7",
+                    "expected_output": "3",
+                    "description": "Test case 2",
                 },
-                {
-                    'input': "10, 7",
-                    'expected_output': "3",
-                    'description': "Test case 2"
-                }
-            ]
-        }
+            ],
+        },
     ]
 
     # 各コードサンプルを処理

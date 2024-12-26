@@ -199,7 +199,7 @@ def get_code_embeddings():
     print("\nデータベース内の全コード:")
     for code_id, code, embedding in all_codes:
         print(
-            f"ID: {code_id}, Code: {code[:30]}..., Embedding: {'あり' if embedding else 'なし'}"
+            f"ID: {code_id}, Code: {code}..., Embedding: {'あり' if embedding else 'なし'}\n"
         )
 
     # embeddingがnullでないデータのみ取得

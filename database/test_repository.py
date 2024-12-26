@@ -5,7 +5,7 @@ def insert_test_case(
     code_id: int, input_val: str, expected_output: str, description: str
 ):
     """テストケースをデータベースに挿入します。
-    
+
     同じコードに対して同じ入力と期待される出力の組み合わせが既に存在する場合は、
     重複を避けるために挿入を行いません。
 
@@ -25,7 +25,7 @@ def insert_test_case(
         # 既存のテストケースをチェック
         cursor.execute(
             """
-            SELECT id FROM test_cases 
+            SELECT id FROM test_cases
             WHERE code_id = ? AND input = ? AND expected_output = ?
             """,
             (code_id, input_val, expected_output),

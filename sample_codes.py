@@ -523,8 +523,4 @@ code_samples = [
             },
         ],
     },
-<<<<<<< HEAD
 ]
-=======
-]
->>>>>>> 499fd7b (refactor: move sample code definitions to separate file)

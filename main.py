@@ -87,7 +87,7 @@ def main():
 
     # Geminiを使用してコードを生成
     gemini = GeminiClient()
-    prompt = "フィボナッチ数列を生成する関数を書いてください。引数としてcntを受け取り、最初のcnt個のフィボナッチ数をリストとして返します。"
+    prompt = input("類似コードを検索するためのプロンプトを入力してください: ")
     ai_code = gemini.generate_code(prompt)
 
     if ai_code:

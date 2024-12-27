@@ -1,5 +1,6 @@
 from database import connection, code_repository, test_repository
 from embedding.api_client import BedrockClient
+from embedding.gemini_client import GeminiClient
 from embedding.similarity import find_most_similar
 from sample_codes import code_samples
 
@@ -83,16 +84,17 @@ def main():
 
     # 類似コード検索のデモ
     print("\n=== 類似コードの検索 ===")
-    ai_code = """def fib_l(cnt):
-    a, b = 0, 1
-    fib_l=[]
-    while cnt:
-        cnt-=1
-        fib_l.append(b)
-        a, b = b, a+b
-    return fib_l"""
-    print(f"AI生成コード:\n{ai_code}")
-    find_similar_code(ai_code)
+
+    # Geminiを使用してコードを生成
+    gemini = GeminiClient()
+    prompt = "フィボナッチ数列を生成する関数を書いてください。引数としてcntを受け取り、最初のcnt個のフィボナッチ数をリストとして返します。"
+    ai_code = gemini.generate_code(prompt)
+
+    if ai_code:
+        print(f"AI生成コード:\n{ai_code}")
+        find_similar_code(ai_code)
+    else:
+        print("コードの生成に失敗しました")
 
 
 if __name__ == "__main__":

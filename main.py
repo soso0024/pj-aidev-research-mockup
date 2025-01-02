@@ -16,11 +16,7 @@ def insert_code_with_tests(code_data: dict):
             'test_cases': list    # テストケースのリスト
         }
     """
-    code_id = code_repository.insert_code(
-        code=code_data["code"],
-        language=code_data["language"],
-        description=code_data["description"],
-    )
+    code_id = code_repository.insert_code(code=code_data["code"])
 
     if code_id:
         print(f"Code ID: {code_id}")
@@ -35,11 +31,8 @@ def insert_code_with_tests(code_data: dict):
                 code_id=code_id,
                 input_val=test_case["input"],
                 expected_output=test_case["expected_output"],
-                description=test_case["description"],
             ):
-                print(
-                    f"Inserted {test_case['description']} for {code_data['description']}"
-                )
+                print(f"Inserted test case for code ID {code_id}")
 
 
 def find_similar_code(code: str):

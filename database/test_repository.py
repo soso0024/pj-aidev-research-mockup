@@ -1,9 +1,7 @@
 from .connection import get_connection
 
 
-def insert_test_case(
-    code_id: int, input_val: str, expected_output: str, description: str
-):
+def insert_test_case(code_id: int, input_val: str, expected_output: str):
     """テストケースをデータベースに挿入します。
 
     同じコードに対して同じ入力と期待される出力の組み合わせが既に存在する場合は、
@@ -13,7 +11,6 @@ def insert_test_case(
         code_id: テストケースが関連付けられるコードのID
         input_val: テストケースの入力値
         expected_output: テストケースの期待される出力
-        description: テストケースの説明
 
     Returns:
         True: 挿入が成功した場合、または同じテストケースが既に存在する場合
@@ -39,10 +36,10 @@ def insert_test_case(
         # 新しいテストケースを挿入
         cursor.execute(
             """
-            INSERT INTO test_cases (code_id, input, expected_output, description)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO test_cases (code_id, input, expected_output)
+            VALUES (?, ?, ?)
             """,
-            (code_id, input_val, expected_output, description),
+            (code_id, input_val, expected_output),
         )
         conn.commit()
         conn.close()

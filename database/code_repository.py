@@ -2,7 +2,7 @@ import json
 from .connection import get_connection
 
 
-def insert_code(code: str, language: str, description: str):
+def insert_code(code: str):
     """コードをデータベースに挿入します。"""
     conn = get_connection()
     cursor = conn.cursor()
@@ -18,10 +18,10 @@ def insert_code(code: str, language: str, description: str):
         # 新しいコードを挿入
         cursor.execute(
             """
-            INSERT INTO codes (code, language, embedding, description)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO codes (code, embedding)
+            VALUES (?, ?)
         """,
-            (code, language, None, description),
+            (code, None),
         )
         conn.commit()
         code_id = cursor.lastrowid

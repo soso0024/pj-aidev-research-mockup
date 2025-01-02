@@ -18,9 +18,7 @@ def create_database():
         CREATE TABLE IF NOT EXISTS codes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             code TEXT NOT NULL UNIQUE,
-            language TEXT NOT NULL,
-            embedding TEXT,
-            description TEXT
+            embedding TEXT
         )
     """
     )
@@ -32,7 +30,6 @@ def create_database():
             code_id INTEGER,
             input TEXT NOT NULL,
             expected_output TEXT NOT NULL,
-            description TEXT,
             FOREIGN KEY (code_id) REFERENCES codes(id)
         )
     """

@@ -35,8 +35,55 @@ def insert_code_with_tests(code_data: dict):
                 print(f"Inserted test case for code ID {code_id}")
 
 
+def run_test_case(code: str, input_val: str, expected_output: str):
+    """テストケースを実行し、結果を返します。
+
+    Args:
+        code: 実行するコード
+        input_val: テストケースの入力値
+        expected_output: 期待される出力
+
+    Returns:
+        (bool, str): テストの成功/失敗と実際の出力
+    """
+    try:
+        # コードをグローバル名前空間で実行
+        namespace = {}
+        exec(code, namespace)
+        
+        # 関数名を取得（最初の関数定義を使用）
+        func_name = None
+        for name, obj in namespace.items():
+            if callable(obj) and name != '__builtins__':
+                func_name = name
+                break
+        
+        if not func_name:
+            return False, "No function found in code"
+        
+        # 入力値を評価
+        try:
+            input_val = eval(input_val)
+        except:
+            pass  # 文字列として扱う
+            
+        # 期待される出力を評価
+        try:
+            expected_output = eval(expected_output)
+        except:
+            pass  # 文字列として扱う
+            
+        # 関数を実行
+        actual_output = namespace[func_name](input_val)
+        
+        # 結果を比較
+        success = actual_output == expected_output
+        return success, str(actual_output)
+    except Exception as e:
+        return False, f"Error: {str(e)}"
+
 def find_similar_code(code: str):
-    """類似コードを検索し、関連するテストケースを取得します。
+    """類似コードを検索し、関連するテストケースを取得して実行します。
 
     Args:
         code: 検索対象のコード
@@ -57,9 +104,13 @@ def find_similar_code(code: str):
 
         test_cases = test_repository.get_test_cases(best_match_id)
         if test_cases:
-            print("\n選択されたテストケース:")
+            print("\nテスト実行結果:")
             for input_val, expected_output in test_cases:
-                print(f"Input: {input_val}, Expected Output: {expected_output}")
+                success, actual_output = run_test_case(code, input_val, expected_output)
+                print(f"Input: {input_val}")
+                print(f"Expected Output: {expected_output}")
+                print(f"Actual Output: {actual_output}")
+                print(f"Result: {'✓ Pass' if success else '✗ Fail'}\n")
         else:
             print(f"\nコード ID {best_match_id} のテストケースが見つかりません")
     else:

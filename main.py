@@ -105,12 +105,20 @@ def find_similar_code(code: str):
         test_cases = test_repository.get_test_cases(best_match_id)
         if test_cases:
             print("\nテスト実行結果:")
+            total_tests = len(test_cases)
+            passed_tests = 0
             for input_val, expected_output in test_cases:
                 success, actual_output = run_test_case(code, input_val, expected_output)
+                if success:
+                    passed_tests += 1
                 print(f"Input: {input_val}")
                 print(f"Expected Output: {expected_output}")
                 print(f"Actual Output: {actual_output}")
                 print(f"Result: {'✓ Pass' if success else '✗ Fail'}\n")
+            
+            # テストケースの通過率を表示
+            pass_rate = (passed_tests / total_tests) * 100
+            print(f"テスト結果サマリー: {passed_tests}/{total_tests} テストケース通過 ({pass_rate:.1f}%)")
         else:
             print(f"\nコード ID {best_match_id} のテストケースが見つかりません")
     else:

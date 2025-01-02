@@ -61,11 +61,24 @@ def run_test_case(code: str, input_val: str, expected_output: str):
         if not func_name:
             return False, "No function found in code"
         
-        # 入力値を評価
-        try:
-            input_val = eval(input_val)
-        except:
-            pass  # 文字列として扱う
+        # 入力値を引数リストに変換
+        args = []
+        if ',' in input_val:
+            # カンマで区切られた複数の引数を分割
+            arg_strings = [arg.strip() for arg in input_val.split(',')]
+            for arg in arg_strings:
+                try:
+                    # 各引数を評価して適切な型に変換
+                    args.append(eval(arg))
+                except:
+                    # 評価できない場合は文字列として扱う
+                    args.append(arg)
+        else:
+            # 単一の引数の場合
+            try:
+                args.append(eval(input_val))
+            except:
+                args.append(input_val)
             
         # 期待される出力を評価
         try:
@@ -73,8 +86,8 @@ def run_test_case(code: str, input_val: str, expected_output: str):
         except:
             pass  # 文字列として扱う
             
-        # 関数を実行
-        actual_output = namespace[func_name](input_val)
+        # 関数を実行（複数の引数に対応）
+        actual_output = namespace[func_name](*args)
         
         # 結果を比較
         success = actual_output == expected_output

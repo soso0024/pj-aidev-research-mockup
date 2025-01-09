@@ -10,7 +10,8 @@ from database.test_repository import insert_test_case, get_test_cases
 from embedding.api_client import BedrockClient
 from embedding.gemini_client import GeminiClient
 from embedding.similarity import find_most_similar
-from sample_codes import code_samples
+
+# from sample_codes import code_samples
 
 
 class CodeProcessor:
@@ -188,10 +189,11 @@ def main():
     connection.create_database()
     print("Database created/connected.")
 
-    # サンプルコードの登録
     processor = CodeProcessor()
-    for code_data in code_samples:
-        processor.process_sample_code(code_data)
+
+    # サンプルコードの登録
+    # for code_data in code_samples:
+    #     processor.process_sample_code(code_data)
 
     # 類似コード検索のデモ
     print("\n=== 類似コードの検索 ===")

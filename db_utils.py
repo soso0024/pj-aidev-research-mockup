@@ -118,10 +118,10 @@ def load_and_store_data(solutions_path: str, input_output_path: str) -> Dict[str
 if __name__ == "__main__":
     solutions_path = "APPS/train/4998/solutions.json"
     input_output_path = "APPS/train/4998/input_output.json"
-    
+
     print("=== データ読み込みと保存の開始 ===")
     stats = load_and_store_data(solutions_path, input_output_path)
-    
+
     print("\n=== 処理結果 ===")
     print(f"総ソリューション数: {stats['total_solutions']}")
     print(f"成功したソリューション: {stats['successful_solutions']}")

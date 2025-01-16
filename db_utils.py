@@ -1,78 +1,89 @@
 import json
-from typing import Dict, List, Any
+import re
+from typing import Dict, List, Any, Optional, Tuple
 from database.code_repository import insert_code, update_embedding
 from database.test_repository import insert_test_case
 from embedding.api_client import BedrockClient
 from datasets import load_dataset
-import re
+from database.connection import create_database
 import ast
 
 
-def normalize_test_case(test_str: str) -> str:
-    """テストケース文字列を正規化します。
+def convert_complex_number(num: complex) -> Dict[str, float]:
+    """複素数をJSON シリアライズ可能な形式に変換します。
 
     Args:
-        test_str: 元のテストケース文字列
+        num: 変換する複素数
 
     Returns:
-        str: 正規化されたテストケース文字列
+        Dict[str, float]: 実部と虚部を含む辞書
     """
-    # スペースを正規化
-    test_str = re.sub(r'\s+', ' ', test_str.strip())
-    
-    # カンマのない配列表記を修正
-    test_str = re.sub(r'\[(\d+)\s+(\d+)', r'[\1, \2', test_str)
-    
-    # 括弧のない関数呼び出しを修正
-    test_str = re.sub(r'assert\s+(\w+)\s+([^=\s]+)', r'assert \1(\2)', test_str)
-    
-    return test_str
+    return {
+        "real": num.real,
+        "imag": num.imag
+    }
 
 
-def extract_test_case(test_assertion: str) -> tuple[Any, Any]:
-    """テストケースのアサーションから入力と期待される出力を抽出します。
+def convert_to_json_serializable(obj: Any) -> Any:
+    """オブジェクトをJSON シリアライズ可能な形式に変換します。
 
     Args:
-        test_assertion: アサーション文字列
+        obj: 変換する対象のオブジェクト
 
     Returns:
-        tuple[Any, Any]: (入力値, 期待される出力値)のタプル
+        Any: JSON シリアライズ可能な形式に変換されたオブジェクト
+    """
+    if isinstance(obj, (set, frozenset)):
+        return list(obj)
+    elif isinstance(obj, complex):
+        return convert_complex_number(obj)
+    elif isinstance(obj, tuple):
+        return list(obj)
+    elif isinstance(obj, dict):
+        return {str(k): convert_to_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_json_serializable(x) for x in obj]
+    elif isinstance(obj, float) and (obj == float('inf') or obj == float('-inf') or obj != obj):  # inf, -inf, nan
+        return str(obj)
+    return obj
+
+
+def extract_test_data_from_test_field(test_str: str) -> List[Tuple[Any, Any]]:
+    """テストフィールドからテストデータを抽出します。
+
+    Args:
+        test_str: テストコードを含む文字列
+
+    Returns:
+        List[Tuple[Any, Any]]: (入力値, 期待される出力値)のタプルのリスト
     """
     try:
-        # テストケース文字列を正規化
-        test_assertion = normalize_test_case(test_assertion)
+        # inputsとresultsの部分を抽出
+        inputs_match = re.search(r'inputs\s*=\s*(\[.*?\])\s*results', test_str, re.DOTALL)
+        results_match = re.search(r'results\s*=\s*(\[.*?\])\s*for', test_str, re.DOTALL)
         
-        # 基本的なアサーション形式をチェック
-        basic_match = re.match(r'assert\s+([\w_]+)\((.*?)\)\s*==\s*(.*?)(?:,|\s*$)', test_assertion)
-        if basic_match:
-            func_name, input_str, output_str = basic_match.groups()
-            try:
-                # 文字列を Python の式として評価
-                input_val = ast.literal_eval(input_str)
-                output_val = ast.literal_eval(output_str)
-                return input_val, output_val
-            except (ValueError, SyntaxError):
-                print(f"Failed to parse test case values: {test_assertion}")
-                return None, None
+        if not inputs_match or not results_match:
+            return []
         
-        # 特殊なアサーション形式をチェック（例：assert not func(x)）
-        special_match = re.match(r'assert\s+not\s+([\w_]+)\((.*?)\)', test_assertion)
-        if special_match:
-            func_name, input_str = special_match.groups()
-            try:
-                input_val = ast.literal_eval(input_str)
-                return input_val, False
-            except (ValueError, SyntaxError):
-                print(f"Failed to parse special test case: {test_assertion}")
-                return None, None
+        # 文字列を評価可能な形式に整形
+        inputs_str = inputs_match.group(1).replace('\n', '').replace(' ', '')
+        results_str = results_match.group(1).replace('\n', '').replace(' ', '')
         
-        # その他の形式のアサーション
-        print(f"Unrecognized test case format: {test_assertion}")
-        return None, None
+        # 文字列をPythonオブジェクトに変換
+        inputs = ast.literal_eval(inputs_str)
+        results = ast.literal_eval(results_str)
         
+        # 入力と出力のペアを作成し、JSON シリアライズ可能な形式に変換
+        test_cases = []
+        for input_val, expected in zip(inputs, results):
+            input_val = convert_to_json_serializable(input_val)
+            expected = convert_to_json_serializable(expected)
+            test_cases.append((input_val, expected))
+        
+        return test_cases
     except Exception as e:
-        print(f"Error extracting test case: {e}")
-        return None, None
+        print(f"Error extracting test data: {e}")
+        return []
 
 
 def process_code(code: str, bedrock_client: BedrockClient) -> int:
@@ -101,30 +112,31 @@ def process_code(code: str, bedrock_client: BedrockClient) -> int:
         return 0
 
 
-def process_test_cases(code_id: int, test_list: List[str]) -> bool:
+def process_test_cases(code_id: int, test_data: List[Tuple[Any, Any]]) -> bool:
     """テストケースを処理し、データベースに保存します。
 
     Args:
         code_id: 関連するコードのID
-        test_list: テストケースのリスト
+        test_data: (入力値, 期待される出力値)のタプルのリスト
 
     Returns:
         bool: 全てのテストケースの保存が成功した場合はTrue
     """
     try:
         success = True
-        for test_case in test_list:
-            input_val, output_val = extract_test_case(test_case)
-            if input_val is None or output_val is None:
-                print(f"Failed to extract test case from: {test_case}")
-                continue
+        for input_val, output_val in test_data:
+            try:
+                input_str = json.dumps(input_val)
+                output_str = json.dumps(output_val)
                 
-            input_str = json.dumps(input_val)
-            output_str = json.dumps(output_val)
-            
-            if not insert_test_case(code_id, input_str, output_str):
-                print(f"Failed to insert test case for code {code_id}")
+                if not insert_test_case(code_id, input_str, output_str):
+                    print(f"Failed to insert test case for code {code_id}")
+                    success = False
+            except TypeError as e:
+                print(f"Error serializing test case: {e}")
+                print(f"Input: {type(input_val)}, Output: {type(output_val)}")
                 success = False
+                
         return success
     except Exception as e:
         print(f"Error processing test cases: {e}")
@@ -145,6 +157,10 @@ def load_and_store_data() -> Dict[str, int]:
     }
 
     try:
+        # データベースの初期化
+        print("Initializing database...")
+        create_database()
+
         # データセットの読み込み
         print("Loading dataset...")
         dataset = load_dataset("evalplus/mbppplus")
@@ -159,7 +175,7 @@ def load_and_store_data() -> Dict[str, int]:
         print("\nFirst example structure:")
         for key, value in first_example.items():
             print(f"{key}: {type(value)}")
-            if key in ["code", "test_list"]:
+            if key in ["code", "test"]:
                 print(f"Sample {key}:", value[:200] + "..." if isinstance(value, str) else value[:2])
 
         # BedrockClientのインスタンスを作成
@@ -176,12 +192,17 @@ def load_and_store_data() -> Dict[str, int]:
                 print(f"Processing example {i}/{stats['total_solutions']}")
                 
             code = sample["code"]
-            test_list = sample["test_list"]
+            test_data = extract_test_data_from_test_field(sample["test"])
+
+            if not test_data:
+                print(f"Failed to extract test data for example {i}")
+                stats["failed_solutions"] += 1
+                continue
 
             code_id = process_code(code, bedrock_client)
             if code_id:
                 stats["successful_solutions"] += 1
-                if process_test_cases(code_id, test_list):
+                if process_test_cases(code_id, test_data):
                     stats["successful_test_cases"] += 1
             else:
                 stats["failed_solutions"] += 1

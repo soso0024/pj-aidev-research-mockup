@@ -1,0 +1,9 @@
+boto3
+torch
+transformers
+datasets
+astropy
+google-generativeai
+python-dotenv
+numpy
+scikit-learn

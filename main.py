@@ -83,7 +83,13 @@ class TestRunner:
 
             # 関数を実行
             actual = namespace[func_name](*args)
-            success = actual == expected
+            
+            # タプルとリストを同等とみなす比較
+            if isinstance(actual, (list, tuple)) and isinstance(expected, (list, tuple)):
+                success = list(actual) == list(expected)
+            else:
+                success = actual == expected
+            
             return success, str(actual)
 
         except Exception as e:

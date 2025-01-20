@@ -1,4 +1,6 @@
 from typing import Dict, List, Optional, Tuple
+import json
+import os
 from database import connection
 from database.code_repository import (
     insert_code,
@@ -45,10 +47,23 @@ class CodeProcessor:
 
 class TestRunner:
     @staticmethod
+    def write_failed_test_case(code_id: int, input_val: str, expected_output: str, actual_output: str):
+        """失敗したテストケースを別のファイルに書き出します。"""
+        failed_test = {
+            "code_id": code_id,
+            "input": input_val,
+            "expected_output": expected_output,
+            "actual_output": actual_output
+        }
+        with open(f"failed_tests_{code_id}.json", "a") as f:
+            json.dump(failed_test, f, ensure_ascii=False)
+            f.write("\n")
+
+    @staticmethod
     def run_test_case(
-        code: str, input_val: str, expected_output: str
+        code: str, input_val: str, expected_output: str, code_id: int
     ) -> Tuple[bool, str]:
-        """テストケースを実行します。"""
+        """テストケースを実行します。失敗した場合は別ファイルに記録します。"""
         try:
             # コードをグローバル名前空間で実行
             namespace = {}
@@ -68,6 +83,7 @@ class TestRunner:
 
             # 入力値を引数リストに変換
             import ast
+
             try:
                 args = ast.literal_eval(input_val)
                 if not isinstance(args, list):
@@ -83,17 +99,23 @@ class TestRunner:
 
             # 関数を実行
             actual = namespace[func_name](*args)
-            
+
             # タプルとリストを同等とみなす比較
-            if isinstance(actual, (list, tuple)) and isinstance(expected, (list, tuple)):
+            if isinstance(actual, (list, tuple)) and isinstance(
+                expected, (list, tuple)
+            ):
                 success = list(actual) == list(expected)
             else:
                 success = actual == expected
-            
+
+            if not success:
+                TestRunner.write_failed_test_case(code_id, input_val, expected_output, str(actual))
             return success, str(actual)
 
         except Exception as e:
-            return False, f"Error: {str(e)}"
+            error_message = f"Error: {str(e)}"
+            TestRunner.write_failed_test_case(code_id, input_val, expected_output, error_message)
+            return False, error_message
 
 
 class TestResultFormatter:
@@ -167,7 +189,9 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
 
     while True:
         try:
-            choice = int(input("\nテストを実行するコードの番号を選択してください (1-3): "))
+            choice = int(
+                input("\nテストを実行するコードの番号を選択してください (1-3): ")
+            )
             if 1 <= choice <= 3:
                 selected_id, _ = top_matches[choice - 1]
                 break
@@ -195,12 +219,19 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         test_results = []
         for input_val, expected_output in test_cases:
             success, actual = test_runner.run_test_case(
-                similar_code, input_val, expected_output
+                similar_code, input_val, expected_output, selected_id
             )
             test_results.append((input_val, expected_output, success, actual))
 
         # 結果サマリーの表示（3つのサンプルのみ）
         print(TestResultFormatter.format_test_results(test_results))
+        
+        # 失敗したテストケースの情報を表示
+        failed_tests_file = f"failed_tests_{selected_id}.json"
+        if os.path.exists(failed_tests_file):
+            print(f"\n失敗したテストケースの詳細は {failed_tests_file} に保存されました。")
+        else:
+            print("\nすべてのテストケースが成功しました。")
     else:
         print("\nテストケースの実行をスキップしました")
 

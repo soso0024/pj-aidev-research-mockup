@@ -185,10 +185,6 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
 
 
 def main():
-    # データベース初期化
-    connection.create_database()
-    print("Database created/connected.")
-
     processor = CodeProcessor()
 
     # サンプルコードの登録

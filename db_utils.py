@@ -9,6 +9,9 @@ from database.connection import create_database
 import ast
 
 
+import cmath
+
+
 def convert_complex_number(num: complex) -> Dict[str, float]:
     """複素数をJSON シリアライズ可能な形式に変換します。
 
@@ -18,10 +21,7 @@ def convert_complex_number(num: complex) -> Dict[str, float]:
     Returns:
         Dict[str, float]: 実部と虚部を含む辞書
     """
-    return {
-        "real": num.real,
-        "imag": num.imag
-    }
+    return {"real": num.real, "imag": num.imag}
 
 
 def convert_to_json_serializable(obj: Any) -> Any:
@@ -43,9 +43,25 @@ def convert_to_json_serializable(obj: Any) -> Any:
         return {str(k): convert_to_json_serializable(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_to_json_serializable(x) for x in obj]
-    elif isinstance(obj, float) and (obj == float('inf') or obj == float('-inf') or obj != obj):  # inf, -inf, nan
+    elif isinstance(obj, float) and (cmath.isinf(obj) or cmath.isnan(obj)):
         return str(obj)
     return obj
+
+
+def safe_json_dumps(obj: Any) -> str:
+    """オブジェクトを安全にJSONシリアライズします。
+
+    Args:
+        obj: シリアライズする対象のオブジェクト
+
+    Returns:
+        str: JSONシリアライズされた文字列
+    """
+    try:
+        return json.dumps(convert_to_json_serializable(obj))
+    except TypeError as e:
+        print(f"Error serializing object: {e}")
+        return json.dumps(str(obj))
 
 
 def extract_test_data_from_test_field(test_str: str) -> List[Tuple[Any, Any]]:
@@ -59,27 +75,29 @@ def extract_test_data_from_test_field(test_str: str) -> List[Tuple[Any, Any]]:
     """
     try:
         # inputsとresultsの部分を抽出
-        inputs_match = re.search(r'inputs\s*=\s*(\[.*?\])\s*results', test_str, re.DOTALL)
-        results_match = re.search(r'results\s*=\s*(\[.*?\])\s*for', test_str, re.DOTALL)
-        
+        inputs_match = re.search(
+            r"inputs\s*=\s*(\[.*?\])\s*results", test_str, re.DOTALL
+        )
+        results_match = re.search(r"results\s*=\s*(\[.*?\])\s*for", test_str, re.DOTALL)
+
         if not inputs_match or not results_match:
             return []
-        
+
         # 文字列を評価可能な形式に整形
-        inputs_str = inputs_match.group(1).replace('\n', '').replace(' ', '')
-        results_str = results_match.group(1).replace('\n', '').replace(' ', '')
-        
+        inputs_str = inputs_match.group(1).replace("\n", "").replace(" ", "")
+        results_str = results_match.group(1).replace("\n", "").replace(" ", "")
+
         # 文字列をPythonオブジェクトに変換
         inputs = ast.literal_eval(inputs_str)
         results = ast.literal_eval(results_str)
-        
+
         # 入力と出力のペアを作成し、JSON シリアライズ可能な形式に変換
         test_cases = []
         for input_val, expected in zip(inputs, results):
             input_val = convert_to_json_serializable(input_val)
             expected = convert_to_json_serializable(expected)
             test_cases.append((input_val, expected))
-        
+
         return test_cases
     except Exception as e:
         print(f"Error extracting test data: {e}")
@@ -125,18 +143,13 @@ def process_test_cases(code_id: int, test_data: List[Tuple[Any, Any]]) -> bool:
     try:
         success = True
         for input_val, output_val in test_data:
-            try:
-                input_str = json.dumps(input_val)
-                output_str = json.dumps(output_val)
-                
-                if not insert_test_case(code_id, input_str, output_str):
-                    print(f"Failed to insert test case for code {code_id}")
-                    success = False
-            except TypeError as e:
-                print(f"Error serializing test case: {e}")
-                print(f"Input: {type(input_val)}, Output: {type(output_val)}")
+            input_str = safe_json_dumps(input_val)
+            output_str = safe_json_dumps(output_val)
+
+            if not insert_test_case(code_id, input_str, output_str):
+                print(f"Failed to insert test case for code {code_id}")
                 success = False
-                
+
         return success
     except Exception as e:
         print(f"Error processing test cases: {e}")
@@ -165,7 +178,7 @@ def load_and_store_data() -> Dict[str, int]:
         print("Loading dataset...")
         dataset = load_dataset("evalplus/mbppplus")
         print(f"Dataset structure: {dataset}")
-        
+
         if not dataset or "test" not in dataset:
             print("Failed to load dataset or 'test' split not found")
             return stats
@@ -176,7 +189,10 @@ def load_and_store_data() -> Dict[str, int]:
         for key, value in first_example.items():
             print(f"{key}: {type(value)}")
             if key in ["code", "test"]:
-                print(f"Sample {key}:", value[:200] + "..." if isinstance(value, str) else value[:2])
+                print(
+                    f"Sample {key}:",
+                    value[:200] + "..." if isinstance(value, str) else value[:2],
+                )
 
         # BedrockClientのインスタンスを作成
         bedrock_client = BedrockClient()
@@ -190,7 +206,7 @@ def load_and_store_data() -> Dict[str, int]:
         for i, sample in enumerate(test_dataset):
             if i % 10 == 0:  # より頻繁に進捗を表示
                 print(f"Processing example {i}/{stats['total_solutions']}")
-                
+
             code = sample["code"]
             test_data = extract_test_data_from_test_field(sample["test"])
 
@@ -211,12 +227,19 @@ def load_and_store_data() -> Dict[str, int]:
     except Exception as e:
         print(f"Error loading dataset: {e}")
         import traceback
+
         traceback.print_exc()
         return stats
 
 
 if __name__ == "__main__":
-    print("=== データ読み込みと保存の開始 ===")
+    print("=== データベース作成とデータ読み込み・保存の開始 ===")
+
+    # データベースの作成
+    create_database()
+    print("データベースが作成されました。")
+
+    # データの読み込みと保存
     stats = load_and_store_data()
 
     print("\n=== 処理結果 ===")
@@ -224,3 +247,5 @@ if __name__ == "__main__":
     print(f"成功したソリューション: {stats['successful_solutions']}")
     print(f"失敗したソリューション: {stats['failed_solutions']}")
     print(f"テストケース保存成功: {stats['successful_test_cases']}")
+
+    print("\nデータベースファイルが作成され、データが保存されました。")

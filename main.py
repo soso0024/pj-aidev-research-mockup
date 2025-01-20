@@ -98,20 +98,25 @@ class TestRunner:
 
 class TestResultFormatter:
     @staticmethod
-    def format_test_results(test_results: List[Tuple[str, str, bool, str]]) -> str:
+    def format_test_results(
+        test_results: List[Tuple[str, str, bool, str]], limit: int = 3
+    ) -> str:
         """テスト結果を整形します。"""
         total_tests = len(test_results)
         passed_tests = sum(1 for _, _, success, _ in test_results if success)
         pass_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
 
-        output = ["\n=== テスト実行結果 ==="]
-        for input_val, expected, success, actual in test_results:
+        output = ["\n=== テスト実行結果 (3つのサンプル) ==="]
+        for i, (input_val, expected, success, actual) in enumerate(
+            test_results[:limit], 1
+        ):
             output.extend(
                 [
-                    f"\nInput: {input_val}",
-                    f"Expected Output: {expected}",
-                    f"Actual Output: {actual}",
-                    f"Result: {'✓ Pass' if success else '✗ Fail'}",
+                    f"\nテストケース {i}:",
+                    f"入力値: {input_val}",
+                    f"期待される出力: {expected}",
+                    f"実際の出力: {actual}",
+                    f"結果: {'✓ Pass' if success else '✗ Fail'}",
                 ]
             )
 
@@ -154,31 +159,27 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         print(f"\nコード ID {best_match_id} のテストケースが見つかりません")
         return
 
-    # 全テストケースの表示
-    print("\n=== 利用可能なテストケース ===")
-    for i, (input_val, expected_output) in enumerate(test_cases, 1):
+    # 3つのテストケースのみ表示
+    print("\n=== 利用可能なテストケース (3つのサンプル) ===")
+    for i, (input_val, expected_output) in enumerate(test_cases[:3], 1):
         print(f"\nテストケース {i}:")
         print(f"入力値: {input_val}")
         print(f"期待される出力: {expected_output}")
 
     # テストケース実行の確認
-    user_input = input("\n上記のテストケースを実行しますか？ (y/n): ").lower()
+    user_input = input("\nすべてのテストケースを実行しますか？ (y/n): ").lower()
 
     if user_input == "y":
-        # 全テストケースの実行
-        print("\n=== テスト実行開始 ===")
+        # すべてのテストケースの実行
+        print("\n~~~ テスト実行開始 ~~~")
         test_results = []
         for input_val, expected_output in test_cases:
             success, actual = test_runner.run_test_case(
                 code, input_val, expected_output
             )
             test_results.append((input_val, expected_output, success, actual))
-            print(f"\n入力値: {input_val}")
-            print(f"期待される出力: {expected_output}")
-            print(f"実際の出力: {actual}")
-            print(f"結果: {'✓ Pass' if success else '✗ Fail'}")
 
-        # 結果サマリーの表示
+        # 結果サマリーの表示（3つのサンプルのみ）
         print(TestResultFormatter.format_test_results(test_results))
     else:
         print("\nテストケースの実行をスキップしました")

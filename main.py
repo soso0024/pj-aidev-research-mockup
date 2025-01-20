@@ -141,30 +141,50 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         print("\nコードデータが見つかりません")
         return
 
-    best_match_id, similarity = find_most_similar(code_embedding, code_embeddings)
-    if not best_match_id:
+    top_matches = find_most_similar(code_embedding, code_embeddings, top_n=3)
+    if not top_matches:
         print("\n類似コードが見つかりません")
         return
 
-    print(f"\n最も類似したコード ID: {best_match_id}")
-    print(f"類似度: {similarity:.4f}")
+    print("\n=== 上位3つの類似コード ===")
+    for i, (match_id, similarity) in enumerate(top_matches, 1):
+        print(f"{i}. コード ID: {match_id}, 類似度: {similarity:.4f}")
+        similar_code = get_code_by_id(match_id)
+        if similar_code:
+            print(f"\nコード:\n{similar_code}")
+            test_cases = get_test_cases(match_id)
+            if test_cases:
+                print("\nテストケース:")
+                for j, (input_val, expected_output) in enumerate(test_cases[:3], 1):
+                    print(f"  テストケース {j}:")
+                    print(f"    入力値: {input_val}")
+                    print(f"    期待される出力: {expected_output}")
+            else:
+                print("テストケースが見つかりません")
+        else:
+            print(f"コード ID {match_id} の取得に失敗しました")
+        print()  # 空行を追加して見やすくする
 
-    similar_code = get_code_by_id(best_match_id)
+    while True:
+        try:
+            choice = int(input("\nテストを実行するコードの番号を選択してください (1-3): "))
+            if 1 <= choice <= 3:
+                selected_id, _ = top_matches[choice - 1]
+                break
+            else:
+                print("1から3の数字を入力してください。")
+        except ValueError:
+            print("有効な数字を入力してください。")
+
+    similar_code = get_code_by_id(selected_id)
     if not similar_code:
-        print(f"\nコード ID {best_match_id} の取得に失敗しました")
+        print(f"\nコード ID {selected_id} の取得に失敗しました")
         return
 
-    test_cases = get_test_cases(best_match_id)
+    test_cases = get_test_cases(selected_id)
     if not test_cases:
-        print(f"\nコード ID {best_match_id} のテストケースが見つかりません")
+        print(f"\nコード ID {selected_id} のテストケースが見つかりません")
         return
-
-    # 3つのテストケースのみ表示
-    print("\n=== 利用可能なテストケース (3つのサンプル) ===")
-    for i, (input_val, expected_output) in enumerate(test_cases[:3], 1):
-        print(f"\nテストケース {i}:")
-        print(f"入力値: {input_val}")
-        print(f"期待される出力: {expected_output}")
 
     # テストケース実行の確認
     user_input = input("\nすべてのテストケースを実行しますか？ (y/n): ").lower()
@@ -175,7 +195,7 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         test_results = []
         for input_val, expected_output in test_cases:
             success, actual = test_runner.run_test_case(
-                code, input_val, expected_output
+                similar_code, input_val, expected_output
             )
             test_results.append((input_val, expected_output, success, actual))
 

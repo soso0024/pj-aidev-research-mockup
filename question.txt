@@ -1,5 +1,1 @@
-Write a function to find the shared elements from the given two lists.
-Input and Output Format:
-input:[[3, 4, 5, 6], [5, 7, 4, 10]]	output:[4, 5]
-input:[[1, 2, 3, 4], [5, 4, 3, 7]]	output:[3, 4]
-input:[[11, 12, 13, 14], [15, 16, 17, 18]]	output:[]
+Write a function to find the maximum difference between available pairs in the given tuple list.

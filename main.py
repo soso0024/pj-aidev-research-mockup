@@ -67,23 +67,17 @@ class TestRunner:
                 return False, "No function found in code"
 
             # 入力値を引数リストに変換
-            args = []
-            if "," in input_val:
-                # カンマで区切られた複数の引数を分割
-                for arg in (arg.strip() for arg in input_val.split(",")):
-                    try:
-                        args.append(eval(arg))
-                    except:
-                        args.append(arg)
-            else:
-                try:
-                    args.append(eval(input_val))
-                except:
-                    args.append(input_val)
+            import ast
+            try:
+                args = ast.literal_eval(input_val)
+                if not isinstance(args, list):
+                    args = [args]
+            except:
+                args = [input_val]
 
             # 期待される出力を評価
             try:
-                expected = eval(expected_output)
+                expected = ast.literal_eval(expected_output)
             except:
                 expected = expected_output
 

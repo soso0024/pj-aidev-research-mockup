@@ -4,3 +4,5 @@ code_comparison.db
 APPS
 cline_docs
 repomix-output.txt
+failed_tests
+test.py

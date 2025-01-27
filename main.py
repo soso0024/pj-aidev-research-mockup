@@ -47,15 +47,18 @@ class CodeProcessor:
 
 class TestRunner:
     @staticmethod
-    def write_failed_test_case(code_id: int, input_val: str, expected_output: str, actual_output: str):
-        """失敗したテストケースを別のファイルに書き出します。"""
+    def write_failed_test_case(
+        code_id: int, input_val: str, expected_output: str, actual_output: str
+    ):
+        """失敗したテストケースをfailed_testsフォルダに書き出します。"""
         failed_test = {
             "code_id": code_id,
             "input": input_val,
             "expected_output": expected_output,
-            "actual_output": actual_output
+            "actual_output": actual_output,
         }
-        with open(f"failed_tests_{code_id}.json", "a") as f:
+        os.makedirs("failed_tests", exist_ok=True)
+        with open(f"failed_tests/failed_tests_{code_id}.json", "a") as f:
             json.dump(failed_test, f, ensure_ascii=False)
             f.write("\n")
 
@@ -109,12 +112,16 @@ class TestRunner:
                 success = actual == expected
 
             if not success:
-                TestRunner.write_failed_test_case(code_id, input_val, expected_output, str(actual))
+                TestRunner.write_failed_test_case(
+                    code_id, input_val, expected_output, str(actual)
+                )
             return success, str(actual)
 
         except Exception as e:
             error_message = f"Error: {str(e)}"
-            TestRunner.write_failed_test_case(code_id, input_val, expected_output, error_message)
+            TestRunner.write_failed_test_case(
+                code_id, input_val, expected_output, error_message
+            )
             return False, error_message
 
 
@@ -225,11 +232,13 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
 
         # 結果サマリーの表示（3つのサンプルのみ）
         print(TestResultFormatter.format_test_results(test_results))
-        
+
         # 失敗したテストケースの情報を表示
         failed_tests_file = f"failed_tests_{selected_id}.json"
         if os.path.exists(failed_tests_file):
-            print(f"\n失敗したテストケースの詳細は {failed_tests_file} に保存されました。")
+            print(
+                f"\n失敗したテストケースの詳細は {failed_tests_file} に保存されました。"
+            )
         else:
             print("\nすべてのテストケースが成功しました。")
     else:

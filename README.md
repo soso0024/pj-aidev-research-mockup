@@ -1,3 +1,12 @@
+## Demo
+
+This is a demo video.
+
+### Prompt
+> Write a function to find the shared elements from the given two lists.
+
+https://github.com/user-attachments/assets/c55b4161-ff83-474b-8389-57daee65409b
+
 ## Blueprint
 
 ![blueprint](https://github.com/soso0024/pj-aidev-research-mockup/blob/main/imgs/Blueprint.png)

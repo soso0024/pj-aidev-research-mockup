@@ -48,7 +48,11 @@ class CodeProcessor:
 class TestRunner:
     @staticmethod
     def write_failed_test_case(
-        code_id: int, input_val: str, expected_output: str, actual_output: str
+        code_id: int,
+        input_val: str,
+        expected_output: str,
+        actual_output: str,
+        question_name: str,
     ):
         """失敗したテストケースをfailed_testsフォルダに書き出します。"""
         failed_test = {
@@ -56,15 +60,22 @@ class TestRunner:
             "input": input_val,
             "expected_output": expected_output,
             "actual_output": actual_output,
+            "question_name": question_name,
         }
         os.makedirs("failed_tests", exist_ok=True)
-        with open(f"failed_tests/failed_tests_{code_id}.json", "a") as f:
+        with open(
+            f"failed_tests/failed_tests_{code_id}_{question_name}.json", "a"
+        ) as f:
             json.dump(failed_test, f, ensure_ascii=False)
             f.write("\n")
 
     @staticmethod
     def run_test_case(
-        code: str, input_val: str, expected_output: str, code_id: int
+        code: str,
+        input_val: str,
+        expected_output: str,
+        code_id: int,
+        question_name: str = "unknown",
     ) -> Tuple[bool, str]:
         """テストケースを実行します。失敗した場合は別ファイルに記録します。"""
         try:
@@ -113,14 +124,14 @@ class TestRunner:
 
             if not success:
                 TestRunner.write_failed_test_case(
-                    code_id, input_val, expected_output, str(actual)
+                    code_id, input_val, expected_output, str(actual), question_name
                 )
             return success, str(actual)
 
         except Exception as e:
             error_message = f"Error: {str(e)}"
             TestRunner.write_failed_test_case(
-                code_id, input_val, expected_output, error_message
+                code_id, input_val, expected_output, error_message, question_name
             )
             return False, error_message
 
@@ -225,8 +236,12 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         print("\n~~~ テスト実行開始 ~~~")
         test_results = []
         for input_val, expected_output in test_cases:
+            # Get question name from the current file being processed
+            question_name = os.path.splitext(
+                os.path.basename("questions/question_01.txt")
+            )[0]
             success, actual = test_runner.run_test_case(
-                similar_code, input_val, expected_output, selected_id
+                similar_code, input_val, expected_output, selected_id, question_name
             )
             test_results.append((input_val, expected_output, success, actual))
 
@@ -234,7 +249,12 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         print(TestResultFormatter.format_test_results(test_results))
 
         # 失敗したテストケースの情報を表示
-        failed_tests_file = f"failed_tests_{selected_id}.json"
+        question_name = os.path.splitext(os.path.basename("questions/question_01.txt"))[
+            0
+        ]
+        failed_tests_file = (
+            f"failed_tests/failed_tests_{selected_id}_{question_name}.json"
+        )
         if os.path.exists(failed_tests_file):
             print(
                 f"\n失敗したテストケースの詳細は {failed_tests_file} に保存されました。"

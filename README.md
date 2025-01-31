@@ -31,3 +31,7 @@ The database has the following two main tables:
 - `code_id` (INTEGER, FOREIGN KEY): ID of the related code
 - `input` (TEXT, NOT NULL): Input value for the test case
 - `expected_output` (TEXT, NOT NULL): Expected output for the test case
+
+### Dataset
+
+This project uses the [evalplus/mbppplus](https://huggingface.co/datasets/evalplus/mbppplus) dataset from Hugging Face to populate the database with code and test cases.

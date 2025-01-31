@@ -255,7 +255,7 @@ def main():
     # 類似コード検索のデモ
     print("\n=== 類似コードの検索 ===")
     try:
-        with open("question.txt", "r", encoding="utf-8") as f:
+        with open("questions/question_01.txt", "r", encoding="utf-8") as f:
             prompt = f.read().strip()
         print(f"プロンプト: {prompt}")
 

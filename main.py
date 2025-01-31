@@ -171,7 +171,9 @@ class TestResultFormatter:
         return "\n".join(output)
 
 
-def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
+def find_and_test_similar_code(
+    code: str, test_runner: TestRunner, question_file: str
+) -> None:
     """類似コードを検索し、テストを実行します。"""
     bedrock = BedrockClient()
     code_embedding = bedrock.get_embedding(code)
@@ -237,9 +239,7 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         test_results = []
         for input_val, expected_output in test_cases:
             # Get question name from the current file being processed
-            question_name = os.path.splitext(
-                os.path.basename("questions/question_01.txt")
-            )[0]
+            question_name = os.path.splitext(os.path.basename(question_file))[0]
             success, actual = test_runner.run_test_case(
                 similar_code, input_val, expected_output, selected_id, question_name
             )
@@ -249,9 +249,7 @@ def find_and_test_similar_code(code: str, test_runner: TestRunner) -> None:
         print(TestResultFormatter.format_test_results(test_results))
 
         # 失敗したテストケースの情報を表示
-        question_name = os.path.splitext(os.path.basename("questions/question_01.txt"))[
-            0
-        ]
+        question_name = os.path.splitext(os.path.basename(question_file))[0]
         failed_tests_file = (
             f"failed_tests/failed_tests_{selected_id}_{question_name}.json"
         )
@@ -274,8 +272,9 @@ def main():
 
     # 類似コード検索のデモ
     print("\n=== 類似コードの検索 ===")
+    question_file = "questions/question_01.txt"
     try:
-        with open("questions/question_01.txt", "r", encoding="utf-8") as f:
+        with open(question_file, "r", encoding="utf-8") as f:
             prompt = f.read().strip()
         print(f"プロンプト: {prompt}")
 
@@ -288,7 +287,7 @@ def main():
         return
     if ai_code:
         print(f"\nAI生成コード:\n{ai_code}")
-        find_and_test_similar_code(ai_code, TestRunner())
+        find_and_test_similar_code(ai_code, TestRunner(), question_file)
     else:
         print("コードの生成に失敗しました")
 

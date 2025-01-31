@@ -3,9 +3,12 @@
 This is a demo video.
 
 ### Prompt
+
 > Write a function to find the shared elements from the given two lists.
 
 https://github.com/user-attachments/assets/c55b4161-ff83-474b-8389-57daee65409b
+
+As you can see, the user has provided a prompt to the system. The system will generate code based on this prompt. And then, the system will provide top three test cases for the generated code according to the cosine similarity with vectors of the codes in the database. After that, the user can choose the appropriate test case for the generated code. The system will run the test case and provide the result. If the test case fails, the system will generate the failed test case for the user.
 
 ## Blueprint
 

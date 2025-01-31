@@ -21,28 +21,28 @@ class CodeProcessor:
         self.bedrock_client = BedrockClient()
         self.gemini_client = GeminiClient()
 
-    def process_sample_code(self, code_data: Dict) -> Optional[int]:
-        """サンプルコードとそのテストケースを処理します。"""
-        code_id = insert_code(code=code_data["code"])
-        if not code_id:
-            return None
+    # def process_sample_code(self, code_data: Dict) -> Optional[int]:
+    #     """サンプルコードとそのテストケースを処理します。"""
+    #     code_id = insert_code(code=code_data["code"])
+    #     if not code_id:
+    #         return None
 
-        try:
-            embedding = self.bedrock_client.get_embedding(code_data["code"])
-            if update_embedding(code_id, embedding):
-                print(f"Updated embedding for code ID: {code_id}")
+    #     try:
+    #         embedding = self.bedrock_client.get_embedding(code_data["code"])
+    #         if update_embedding(code_id, embedding):
+    #             print(f"Updated embedding for code ID: {code_id}")
 
-                for test_case in code_data["test_cases"]:
-                    if insert_test_case(
-                        code_id=code_id,
-                        input_val=test_case["input"],
-                        expected_output=test_case["expected_output"],
-                    ):
-                        print(f"Inserted test case for code ID {code_id}")
-                return code_id
-        except Exception as e:
-            print(f"Error processing sample code: {e}")
-        return None
+    #             for test_case in code_data["test_cases"]:
+    #                 if insert_test_case(
+    #                     code_id=code_id,
+    #                     input_val=test_case["input"],
+    #                     expected_output=test_case["expected_output"],
+    #                 ):
+    #                     print(f"Inserted test case for code ID {code_id}")
+    #             return code_id
+    #     except Exception as e:
+    #         print(f"Error processing sample code: {e}")
+    #     return None
 
 
 class TestRunner:

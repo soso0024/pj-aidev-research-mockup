@@ -1,12 +1,14 @@
-name: Lint Copy
+name: Run Linter From Template
 
 on:
   push:
     branches: [main]
 
-jobs:
-  call-test:
-    uses: soso0024/pj-aidev-llm-clients/.github/workflows/lint.yml@main
-    with:
-      python-version: '3.9'
+permissions:
+  checks: write
 
+jobs:
+  lint:
+    uses: soso0024/ci-templates/.github/workflows/lint-python.yml@main
+    with:
+      python-version: "3.9"

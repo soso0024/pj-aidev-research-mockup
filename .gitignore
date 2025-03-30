@@ -7,3 +7,4 @@ repomix-output.txt
 failed_tests
 test.py
 .DS_Store
+.qodo

@@ -1,0 +1,12 @@
+name: Lint Copy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  call-test:
+    uses: soso0024/pj-aidev-llm-clients/.github/workflows/test.yml@main
+    with:
+      python-version: '3.11'
+

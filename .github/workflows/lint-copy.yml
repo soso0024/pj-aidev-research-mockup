@@ -8,5 +8,5 @@ jobs:
   call-test:
     uses: soso0024/pj-aidev-llm-clients/.github/workflows/lint.yml@main
     with:
-      python-version: '3.11'
+      python-version: '3.9'
 
